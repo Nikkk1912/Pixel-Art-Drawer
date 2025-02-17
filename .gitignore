@@ -1,0 +1,45 @@
+﻿# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Folder
+obj
+bin
+.idea
+.vs
+
+# Windows Installer files (older versions)
+*.pdb
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Dd]Release/
+[Dd]ebug/ 
+[Dd]Release/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
