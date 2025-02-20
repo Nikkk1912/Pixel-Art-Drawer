@@ -18,7 +18,8 @@
         <!-- <Rectangle Fill="#333333" Grid.Column="0" Margin="0,5,5,5"/> -->
         
         <!--Work Area-->
-        <Rectangle Fill="LemonChiffon" Grid.Column="1" Margin="5,5,5,5"/>
+        <userControls:WorkArea Grid.Column="1" Margin="5,5,5,5" />
+        <!-- <Rectangle Fill="LemonChiffon" Grid.Column="1" Margin="5,5,5,5"/> -->
 
         <!-- Layers and Colors -->
         <Grid Grid.Column="2">
