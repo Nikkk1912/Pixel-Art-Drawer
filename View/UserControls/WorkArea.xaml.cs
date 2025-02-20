@@ -9,19 +9,27 @@ namespace PixelArt.View.UserControls;
 
 public partial class WorkArea : UserControl
 {
-    private int _columns = 10;
-    private int _rows = 10;
-    private double _pixelSize = 20; 
+    private int _columns = 5;
+    private int _rows = 5;
+    
+    private double _pixelSize = 40;
+
+    private PixelSheet _pixelSheet;
+    private ColorInventory _colorInventory;
+
     private Canvas _pixelCanvas;
     private Grid _containerGrid;
-    private PixelSheet _pixelSheet;
+
+    private bool _isPainting;
+    private Brush _selectedColor;
 
     public WorkArea()
     {
         InitializeComponent();
 
         _pixelSheet = new PixelSheet(_rows, _columns);
-        
+        _colorInventory = new ColorInventory();
+
         CreateUi();
         UpdatePixelSize();
     }
@@ -31,13 +39,11 @@ public partial class WorkArea : UserControl
         if (WorkAreaGrid != null && PixelCanvas != null)
         {
             _containerGrid = WorkAreaGrid;
-            
             _pixelCanvas = PixelCanvas;
-
             
             Content = _containerGrid;
-            
-            SizeChanged += WorkArea_SizeChanged; 
+
+            SizeChanged += WorkArea_SizeChanged;
             MouseWheel += WorkArea_MouseWheel;
         }
     }
@@ -50,13 +56,11 @@ public partial class WorkArea : UserControl
 
     private void UpdatePixelSize()
     {
-        
-        double width = WorkAreaGrid.ActualWidth;
-        double height = WorkAreaGrid.ActualHeight;
-        
-        Console.WriteLine("Width - " + width);
-        Console.WriteLine("Height - " + height);
-        
+        // double width = WorkAreaGrid.ActualWidth;
+        // double height = WorkAreaGrid.ActualHeight;
+        // Console.WriteLine("Width - " + width);
+        // Console.WriteLine("Height - " + height);
+
         if (_containerGrid is { ActualWidth: > 0, ActualHeight: > 0 })
         {
             _pixelSize = Math.Min(_containerGrid.ActualWidth / _columns, _containerGrid.ActualHeight / _rows);
@@ -79,54 +83,104 @@ public partial class WorkArea : UserControl
                     Stroke = Brushes.Black,
                     Fill = _pixelSheet.GetPixel(y, x).Color
                 };
+                
+                // double positionX = ((WorkAreaGrid.ActualWidth / 2) - (_pixelSize * (_columns / 2))) + (x * _pixelSize);
+                // double positionY = ((WorkAreaGrid.ActualHeight / 2) - (_pixelSize * (_rows / 2))) + (y * _pixelSize);
+                
+                double positionX = ((WorkAreaGrid.ActualWidth - (_pixelSize * _columns)) / 2) + (x * _pixelSize);
+                double positionY = ((WorkAreaGrid.ActualHeight - (_pixelSize * _rows)) / 2) + (y * _pixelSize);
 
-                double positionX = ((WorkAreaGrid.ActualWidth / 2) - (_pixelSize * (_columns / 2))) + (x * _pixelSize);
-                double positionY = ((WorkAreaGrid.ActualHeight / 2) - (_pixelSize * (_rows / 2))) + (y * _pixelSize);
 
-                Canvas.SetLeft(rect,  positionX);
+                Canvas.SetLeft(rect, positionX);
                 Canvas.SetTop(rect, positionY);
                 
                 rect.MouseDown += (s, e) =>
                 {
-                    Point mousePosition = e.GetPosition(_pixelCanvas);
+                    UpdateSelectedColor(e);
+                    _isPainting = true;
+                    PaintPixel(s, e); 
+                };
+                
+                rect.MouseMove += (s, e) =>
+                {
                     
-                    int clickedColumn = (int)((mousePosition.X - ((WorkAreaGrid.ActualWidth / 2) - (_pixelSize * (_columns / 2)))) / _pixelSize);
-                    int clickedRow = (int)((mousePosition.Y - ((WorkAreaGrid.ActualHeight / 2) - (_pixelSize * (_rows / 2)))) / _pixelSize);
-
-                    Console.WriteLine("Clicked at X: " + mousePosition.X + ", Y: " + mousePosition.Y);
-                    Console.WriteLine("Row: " + clickedRow + ", Column: " + clickedColumn);
-                    
-                    rect.Fill = (rect.Fill == Brushes.Transparent) ? Brushes.Black : Brushes.Transparent;
-                    _pixelSheet.SetPixelColor(clickedRow, clickedColumn, rect.Fill);
+                    if (_isPainting)
+                    {
+                        PaintPixel(s, e);
+                    }
+                };
+                
+                rect.MouseUp += (s, e) =>
+                {
+                    _isPainting = false;
                 };
 
                 _pixelCanvas.Children.Add(rect);
             }
         }
     }
+    
+    private void PaintPixel(object sender, MouseEventArgs e)
+    {
+        Rectangle rect = sender as Rectangle;
+        if (rect == null) return;
+        
+        Point mousePosition = e.GetPosition(_pixelCanvas);
+        
+        // int clickedColumn = (int)((mousePosition.X - ((WorkAreaGrid.ActualWidth / 2) - (_pixelSize * (_columns / 2)))) / _pixelSize);
+        // int clickedRow = (int)((mousePosition.Y - ((WorkAreaGrid.ActualHeight / 2) - (_pixelSize * (_rows / 2)))) / _pixelSize);
+        
+        int clickedColumn = (int)((mousePosition.X - ((WorkAreaGrid.ActualWidth - (_pixelSize * _columns)) / 2)) / _pixelSize);
+        int clickedRow = (int)((mousePosition.Y - ((WorkAreaGrid.ActualHeight - (_pixelSize * _rows)) / 2)) / _pixelSize);
+
+
+        if (rect.Fill != _selectedColor && clickedRow < _rows && clickedColumn < _columns)
+        {
+            rect.Fill = _selectedColor;
+            _pixelSheet.SetPixelColor(clickedRow, clickedColumn, rect.Fill);
+        }
+    }
+    
+    private void UpdateSelectedColor(MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Left)
+        {
+            _selectedColor = _colorInventory.Color1; 
+        }
+        else if (e.ChangedButton == MouseButton.Right)
+        {
+            _selectedColor = _colorInventory.Color2; 
+        }
+    }
 
     private void WorkArea_MouseWheel(object sender, MouseWheelEventArgs e)
     {
-       
-        double maxPixelSize = _containerGrid.ActualWidth / _columns;
-        
-        if (_pixelSize <= maxPixelSize)
+        double maxPixelSizeWidth = _containerGrid.ActualWidth / _columns;
+        double maxPixelSizeHeight = _containerGrid.ActualHeight / _columns;
+
+        double maxPixelSize = Math.Min(maxPixelSizeHeight, maxPixelSizeWidth);
+        double minPixelSize = _columns * 4;
+
+        if (_pixelSize <= maxPixelSizeWidth && _pixelSize <= maxPixelSizeHeight && _pixelSize >= minPixelSize)
         {
             double zoomFactor = e.Delta > 0 ? 1.1 : 0.9;
             _pixelSize *= zoomFactor;
-            
+
             if (_pixelSize > maxPixelSize)
             {
                 _pixelSize = maxPixelSize;
             }
+
             
-            double minPixelSize = 10; 
             if (_pixelSize < minPixelSize)
             {
                 _pixelSize = minPixelSize;
             }
+            Console.WriteLine("Pixel size - " + _pixelSize);
         }
 
-        GeneratePixelCanvas(); 
+        GeneratePixelCanvas();
     }
+    
+    
 }

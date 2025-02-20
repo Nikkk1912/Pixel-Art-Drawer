@@ -10,8 +10,7 @@ public class PixelSheet
     public PixelSheet(int rows, int cols)
     {
         _pixels = new Pixel[rows, cols];
-
-        // Initialize all pixels with Transparent color
+        
         for (int i = 0; i < rows; i++)
         {
             for (int j = 0; j < cols; j++)
@@ -30,7 +29,6 @@ public class PixelSheet
 
     public void SetPixelColor(int rowNum, int colNum, Brush color)
     {
-        Console.WriteLine("Pixel: ");
         _pixels[rowNum, colNum].Color = color;
         Console.WriteLine($"Pixel at ({rowNum}, {colNum}) has color: {color}");
     }
